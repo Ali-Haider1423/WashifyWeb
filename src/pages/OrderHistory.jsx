@@ -1,13 +1,25 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { initialOrders } from '../data/mockData'; // Assuming we export initialOrders
+import { useAuth } from '../context/AuthContext';
+import { getOrders } from '../utils/storage';
 import { Card } from '../components/Card';
-import { ChevronLeft } from 'lucide-react'; // Make sure to install lucide-react if not present, assumed standard icons
+import { ChevronLeft, Package } from 'lucide-react';
 
 const OrderHistory = () => {
     const navigate = useNavigate();
-    // Using initialOrders directly. In a real app, this would be state or context.
-    const orders = initialOrders;
+    const { user } = useAuth();
+    const [orders, setOrders] = useState([]);
+
+    useEffect(() => {
+        if (user) {
+            const allOrders = getOrders();
+            // Filter orders for the current student
+            const myOrders = allOrders
+                .filter(o => o.studentId === user.userId)
+                .sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort by newest first
+            setOrders(myOrders);
+        }
+    }, [user]);
 
     const getStatusColor = (status) => {
         switch (status) {
@@ -19,11 +31,19 @@ const OrderHistory = () => {
     };
 
     const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
         return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     };
 
+    const getDeliveryDate = (orderDate) => {
+        if (!orderDate) return 'N/A';
+        const date = new Date(orderDate);
+        date.setDate(date.getDate() + 2); // Add 2 days for estimated delivery
+        return formatDate(date.toISOString());
+    };
+
     return (
-        <div className="container" style={{ padding: '20px' }}>
+        <div className="container" style={{ padding: '20px', minHeight: '100vh', background: '#F7F9FC' }}>
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
                 <button
                     onClick={() => navigate(-1)}
@@ -34,44 +54,66 @@ const OrderHistory = () => {
                 <h1 style={{ fontSize: '24px', fontWeight: 'bold' }}>My Orders</h1>
             </div>
 
-            {orders.map((order, index) => {
-                const { bg, color } = getStatusColor(order.status);
-                return (
-                    <Card key={order.id} className="fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                            <span style={{ fontWeight: 'bold', fontSize: '16px' }}>Order {order.id.split('-')[2]}</span>
-                            <span style={{
-                                background: bg,
-                                color: color,
-                                padding: '4px 12px',
-                                borderRadius: '12px',
-                                fontSize: '12px',
-                                fontWeight: 'bold'
-                            }}>
-                                {order.status}
-                            </span>
-                        </div>
-
-                        <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
-                            <div style={{ flex: 1 }}>
-                                <p style={{ fontSize: '12px', color: 'var(--text-light)' }}>Ordered On</p>
-                                <p style={{ fontWeight: '600' }}>{formatDate(order.date)}</p>
+            {orders.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-light)' }}>
+                    <div style={{
+                        width: '80px', height: '80px',
+                        background: '#e0e0e0',
+                        borderRadius: '50%',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        margin: '0 auto 20px',
+                        color: 'white'
+                    }}>
+                        <Package size={40} />
+                    </div>
+                    <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '8px' }}>No Orders Yet</h3>
+                    <p>Place your first laundry order to see it here.</p>
+                </div>
+            ) : (
+                orders.map((order, index) => {
+                    const { bg, color } = getStatusColor(order.status);
+                    return (
+                        <Card key={order.id} className="fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                <span style={{ fontWeight: 'bold', fontSize: '16px' }}>Order {order.id.split('-')[1]}</span>
+                                <span style={{
+                                    background: bg,
+                                    color: color,
+                                    padding: '4px 12px',
+                                    borderRadius: '12px',
+                                    fontSize: '12px',
+                                    fontWeight: 'bold'
+                                }}>
+                                    {order.status}
+                                </span>
                             </div>
-                            <div style={{ flex: 1 }}>
-                                <p style={{ fontSize: '12px', color: 'var(--text-light)' }}>Est. Delivery</p>
-                                <p style={{ fontWeight: '600' }}>{formatDate(order.deliveryDate)}</p>
-                            </div>
-                        </div>
 
-                        <div style={{ borderTop: '1px solid #eee', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ color: 'var(--text-light)' }}>Total Amount</span>
-                            <span style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--primary-color)' }}>
-                                ${order.amount.toFixed(2)}
-                            </span>
-                        </div>
-                    </Card>
-                );
-            })}
+                            <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+                                <div style={{ flex: 1 }}>
+                                    <p style={{ fontSize: '12px', color: 'var(--text-light)' }}>Ordered On</p>
+                                    <p style={{ fontWeight: '600' }}>{formatDate(order.date)}</p>
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <p style={{ fontSize: '12px', color: 'var(--text-light)' }}>Est. Delivery</p>
+                                    <p style={{ fontWeight: '600' }}>{getDeliveryDate(order.date)}</p>
+                                </div>
+                            </div>
+
+                            <div style={{ marginBottom: '16px' }}>
+                                <p style={{ fontSize: '12px', color: 'var(--text-light)' }}>Service Provider</p>
+                                <p style={{ fontWeight: '600' }}>{order.sellerName || 'Unknown Seller'}</p>
+                            </div>
+
+                            <div style={{ borderTop: '1px solid #eee', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ color: 'var(--text-light)' }}>Total Amount</span>
+                                <span style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--primary-color)' }}>
+                                    ${order.amount.toFixed(2)}
+                                </span>
+                            </div>
+                        </Card>
+                    );
+                })
+            )}
         </div>
     );
 };

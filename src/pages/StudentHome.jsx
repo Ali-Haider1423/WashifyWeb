@@ -116,14 +116,37 @@ const StudentHome = () => {
                 </div>
 
                 <Button
-                    variant="secondary"
                     fullWidth
                     icon={<Receipt size={20} />}
                     onClick={() => navigate('/student/orders')}
-                    style={{ marginBottom: '24px', justifyContent: 'center' }}
+                    style={{
+                        marginBottom: '24px',
+                        justifyContent: 'center',
+                        height: '52px',
+                        padding: '12px',
+                        borderRadius: '999px',
+                        background: 'linear-gradient(90deg, rgb(43,140,195) 0%, rgba(121, 201, 207, 1) 100%)',
+                        color: '#f1f1f1ff',
+                        fontSize: '14px',
+                        fontWeight: 300,
+                        boxShadow: '0 8px 20px rgba(43, 140, 195, 0.35)',
+                        border: 'none',
+                        transition: 'all 0.25s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow =
+                            '0 12px 28px rgba(43, 140, 195, 0.45)';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow =
+                            '0 8px 20px rgba(43, 140, 195, 0.35)';
+                    }}
                 >
                     View My Orders
                 </Button>
+
 
                 <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px' }}>Available Sellers</h2>
 
