@@ -250,12 +250,20 @@ const OrderCard = ({ order, onClick, onAction }) => {
             {order.status === 'Pending' && (
                 <Button
                     fullWidth
-                    icon={<Clock size={18} />}
+                    icon={<Clock size={20} />}
                     style={{
                         marginTop: '16px',
                         background: 'linear-gradient(135deg, #FF9F43 0%, #FF6B6B 100%)',
                         border: 'none',
-                        boxShadow: '0 4px 15px rgba(255, 107, 107, 0.4)'
+                        boxShadow: '0 4px 15px rgba(255, 107, 107, 0.4)',
+                        color: 'white',
+                        width: '100%',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        padding: '12px',
+                        borderRadius: '16px',
+                        fontWeight: 'bold'
                     }}
                     onClick={(e) => {
                         e.stopPropagation();
@@ -269,12 +277,20 @@ const OrderCard = ({ order, onClick, onAction }) => {
             {order.status === 'In Progress' && (
                 <Button
                     fullWidth
-                    icon={<CheckCircle size={18} />}
+                    icon={<CheckCircle size={20} />}
                     style={{
                         marginTop: '16px',
                         background: 'linear-gradient(135deg, #2ECC71 0%, #26A65B 100%)',
                         border: 'none',
-                        boxShadow: '0 4px 15px rgba(46, 204, 113, 0.4)'
+                        boxShadow: '0 4px 15px rgba(46, 204, 113, 0.4)',
+                        color: 'white',
+                        width: '100%',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        padding: '12px',
+                        borderRadius: '16px',
+                        fontWeight: 'bold'
                     }}
                     onClick={(e) => {
                         e.stopPropagation();
