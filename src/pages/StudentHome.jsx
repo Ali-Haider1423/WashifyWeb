@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Search, MapPin, LogOut, Star, Receipt } from 'lucide-react';
-import { sellers } from '../data/mockData';
+import { getUsers } from '../utils/storage';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 
@@ -10,10 +10,17 @@ const StudentHome = () => {
     const navigate = useNavigate();
     const { logout, user } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
+    const [sellers, setSellers] = useState([]);
+
+    useEffect(() => {
+        const allUsers = getUsers();
+        const realSellers = allUsers.filter(u => u.role === 'seller');
+        setSellers(realSellers);
+    }, []);
 
     const filteredSellers = sellers.filter(seller =>
         seller.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        seller.area.toLowerCase().includes(searchTerm.toLowerCase())
+        (seller.area && seller.area.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
     return (
@@ -83,9 +90,15 @@ const StudentHome = () => {
                 <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px' }}>Available Sellers</h2>
 
                 <div style={{ paddingBottom: '40px' }}>
-                    {filteredSellers.map(seller => (
-                        <SellerCard key={seller.id} seller={seller} />
-                    ))}
+                    {filteredSellers.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-light)' }}>
+                            {sellers.length === 0 ? 'No service providers found anywhere.' : 'No sellers match your search.'}
+                        </div>
+                    ) : (
+                        filteredSellers.map(seller => (
+                            <SellerCard key={seller.id} seller={seller} />
+                        ))
+                    )}
                 </div>
             </div>
         </div>
@@ -112,13 +125,13 @@ const SellerCard = ({ seller }) => {
                     fontWeight: 'bold',
                     color: 'white'
                 }}>
-                    {seller.name[0]}
+                    {seller.name ? seller.name[0].toUpperCase() : 'S'}
                 </div>
                 <div style={{ flex: 1 }}>
                     <h3 style={{ fontSize: '18px', fontWeight: 'bold' }}>{seller.name}</h3>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-light)', fontSize: '14px', marginTop: '4px' }}>
                         <MapPin size={14} />
-                        {seller.area}
+                        {seller.area || 'No location set'}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
                         <div style={{
@@ -133,16 +146,16 @@ const SellerCard = ({ seller }) => {
                             gap: '4px'
                         }}>
                             <Star size={12} fill="#F1C40F" />
-                            {seller.rating}
+                            {seller.rating || 'N/A'}
                         </div>
-                        <span style={{ fontSize: '12px', color: 'var(--text-light)' }}>({seller.reviews} reviews)</span>
+                        <span style={{ fontSize: '12px', color: 'var(--text-light)' }}>({seller.reviews || 0} reviews)</span>
                     </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--primary-color)' }}>
-                        ${seller.pricePerKg}
+                        ${seller.pricePerWash || 10}
                     </div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-light)' }}>/kg</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-light)' }}>/wash</div>
                 </div>
             </div>
         </Card>
