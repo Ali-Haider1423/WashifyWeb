@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Search, MapPin, LogOut, Star, Receipt } from 'lucide-react';
-import { getUsers } from '../utils/storage';
+import { Search, MapPin, LogOut, Star, Receipt, Shirt } from 'lucide-react';
+import { getUsers, saveOrder } from '../utils/storage';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { Input } from '../components/Input';
 
 const StudentHome = () => {
     const navigate = useNavigate();
     const { logout, user } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
     const [sellers, setSellers] = useState([]);
+    const [selectedSeller, setSelectedSeller] = useState(null);
 
     useEffect(() => {
         const allUsers = getUsers();
@@ -22,6 +24,30 @@ const StudentHome = () => {
         seller.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (seller.area && seller.area.toLowerCase().includes(searchTerm.toLowerCase()))
     );
+
+    const handlePlaceOrder = (quantity) => {
+        if (!selectedSeller) return;
+
+        try {
+            const price = selectedSeller.pricePerWash || 10;
+            const totalAmount = quantity * price;
+
+            saveOrder({
+                studentId: user.userId,
+                studentName: user.name,
+                sellerId: selectedSeller.id,
+                sellerName: selectedSeller.name,
+                items: [{ name: 'Suits', quantity: parseInt(quantity) }],
+                amount: totalAmount,
+                quantity: quantity
+            });
+
+            setSelectedSeller(null);
+            alert('Order placed successfully!');
+        } catch (error) {
+            alert('Failed to place order: ' + error.message);
+        }
+    };
 
     return (
         <div className="container" style={{ background: '#F7F9FC' }}>
@@ -96,21 +122,29 @@ const StudentHome = () => {
                         </div>
                     ) : (
                         filteredSellers.map(seller => (
-                            <SellerCard key={seller.id} seller={seller} />
+                            <SellerCard key={seller.id} seller={seller} onClick={() => setSelectedSeller(seller)} />
                         ))
                     )}
                 </div>
             </div>
+
+            {selectedSeller && (
+                <OrderModal
+                    seller={selectedSeller}
+                    onClose={() => setSelectedSeller(null)}
+                    onConfirm={handlePlaceOrder}
+                />
+            )}
         </div>
     );
 };
 
-const SellerCard = ({ seller }) => {
+const SellerCard = ({ seller, onClick }) => {
     return (
         <Card
             noPadding
             className="fade-in"
-            style={{ padding: '16px', cursor: 'pointer', transition: 'transform 0.2s' }}
+            style={{ padding: '16px', transition: 'transform 0.2s', display: 'flex', flexDirection: 'column', gap: '16px' }}
         >
             <div style={{ display: 'flex', gap: '16px' }}>
                 <div style={{
@@ -158,7 +192,84 @@ const SellerCard = ({ seller }) => {
                     <div style={{ fontSize: '12px', color: 'var(--text-light)' }}>/wash</div>
                 </div>
             </div>
+
+            <Button onClick={onClick} fullWidth icon={<Shirt size={20} />}>
+                Place Order
+            </Button>
         </Card>
+    );
+};
+
+const OrderModal = ({ seller, onClose, onConfirm }) => {
+    const [quantity, setQuantity] = useState(1);
+    const price = seller.pricePerWash || 10;
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (quantity > 0) {
+            onConfirm(quantity);
+        }
+    };
+
+    return (
+        <div style={{
+            position: 'fixed',
+            top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+        }} onClick={onClose}>
+            <div style={{
+                background: 'white',
+                padding: '24px',
+                borderRadius: '24px',
+                width: '90%',
+                maxWidth: '320px'
+            }} onClick={e => e.stopPropagation()}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                    <h3 style={{ fontSize: '20px', fontWeight: 'bold' }}>Place Order</h3>
+                    <button onClick={onClose} style={{ border: 'none', background: 'none', fontSize: '24px', cursor: 'pointer' }}>&times;</button>
+                </div>
+
+                <div style={{ marginBottom: '20px' }}>
+                    <p style={{ color: 'var(--text-light)', marginBottom: '4px' }}>Service Provider</p>
+                    <p style={{ fontWeight: 'bold', fontSize: '16px' }}>{seller.name}</p>
+                </div>
+
+                <form onSubmit={handleSubmit}>
+                    <Input
+                        label="Number of Suits"
+                        type="number"
+                        min="1"
+                        value={quantity}
+                        onChange={(e) => setQuantity(e.target.value)}
+                        icon={Shirt}
+                        required
+                    />
+
+                    <div style={{
+                        background: 'var(--surface-color)',
+                        padding: '16px',
+                        borderRadius: '12px',
+                        marginTop: '16px',
+                        marginBottom: '24px'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                            <span style={{ color: 'var(--text-light)' }}>Price per suit</span>
+                            <span>${price}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '18px', color: 'var(--primary-color)' }}>
+                            <span>Total</span>
+                            <span>${(quantity * price).toFixed(2)}</span>
+                        </div>
+                    </div>
+
+                    <Button type="submit" fullWidth>Confirm Order</Button>
+                </form>
+            </div>
+        </div>
     );
 };
 
