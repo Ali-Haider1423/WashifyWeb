@@ -20,12 +20,24 @@ const StudentHome = () => {
         setSellers(realSellers);
     }, []);
 
+    // Redirect if not authenticated
+    useEffect(() => {
+        if (!user) {
+            navigate('/');
+        }
+    }, [user, navigate]);
+
     const filteredSellers = sellers.filter(seller =>
         seller.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (seller.area && seller.area.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
     const handlePlaceOrder = (quantity) => {
+        if (!user) {
+            alert('Please login to place an order');
+            navigate('/');
+            return;
+        }
         if (!selectedSeller) return;
 
         try {

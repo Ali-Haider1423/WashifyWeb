@@ -4,8 +4,7 @@ import { LogOut, DollarSign, Shirt, Receipt, Home, Clock, CheckCircle, Settings,
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
-import { getOrders, updateOrderStatus, updateSellerPrice, getSession, seedOrders } from '../utils/storage';
-import { initialOrders } from '../data/mockData';
+import { getOrders, updateOrderStatus, updateSellerPrice, getSession } from '../utils/storage';
 
 const SellerDashboard = () => {
     const { logout, user } = useAuth();
@@ -25,13 +24,14 @@ const SellerDashboard = () => {
 
     // Load Data
     useEffect(() => {
-        // Seed data if empty for prototype
-        seedOrders(initialOrders);
         refreshOrders();
     }, []);
 
     const refreshOrders = () => {
-        setOrders(getOrders());
+        const allOrders = getOrders();
+        // Filter orders for this specific seller
+        const myOrders = allOrders.filter(o => o.sellerId === user.userId);
+        setOrders(myOrders);
     };
 
     const handleStatusUpdate = (newStatus) => {
@@ -40,6 +40,11 @@ const SellerDashboard = () => {
             refreshOrders(); // Refresh to move to new tab
             setSelectedOrder(null);
         }
+    };
+
+    const handleQuickStatusUpdate = (orderId, newStatus) => {
+        updateOrderStatus(orderId, newStatus);
+        refreshOrders();
     };
 
     const handlePriceUpdate = (e) => {
@@ -130,6 +135,7 @@ const SellerDashboard = () => {
                         key={order.id}
                         order={order}
                         onClick={() => setSelectedOrder(order)}
+                        onAction={handleQuickStatusUpdate}
                     />
                 ))
             )}
@@ -207,7 +213,7 @@ const StatCard = ({ title, value, icon, gradient }) => (
     </Card>
 );
 
-const OrderCard = ({ order, onClick }) => {
+const OrderCard = ({ order, onClick, onAction }) => {
     const getStatusColor = (status) => {
         switch (status) {
             case 'Pending': return { bg: 'rgba(255, 159, 67, 0.1)', color: '#FF9F43' };
@@ -241,6 +247,43 @@ const OrderCard = ({ order, onClick }) => {
                     </div>
                 </div>
             </div>
+            {order.status === 'Pending' && (
+                <Button
+                    fullWidth
+                    icon={<Clock size={18} />}
+                    style={{
+                        marginTop: '16px',
+                        background: 'linear-gradient(135deg, #FF9F43 0%, #FF6B6B 100%)',
+                        border: 'none',
+                        boxShadow: '0 4px 15px rgba(255, 107, 107, 0.4)'
+                    }}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onAction(order.id, 'In Progress');
+                    }}
+                >
+                    Accept Order
+                </Button>
+            )}
+
+            {order.status === 'In Progress' && (
+                <Button
+                    fullWidth
+                    icon={<CheckCircle size={18} />}
+                    style={{
+                        marginTop: '16px',
+                        background: 'linear-gradient(135deg, #2ECC71 0%, #26A65B 100%)',
+                        border: 'none',
+                        boxShadow: '0 4px 15px rgba(46, 204, 113, 0.4)'
+                    }}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onAction(order.id, 'Completed');
+                    }}
+                >
+                    Complete Order
+                </Button>
+            )}
         </Card>
     );
 };

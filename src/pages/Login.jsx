@@ -4,13 +4,14 @@ import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { Mail, Lock } from 'lucide-react';
-import { loginUser } from '../utils/storage';
+import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const role = searchParams.get('role') || 'student';
     const isStudent = role === 'student';
+    const { login } = useAuth();
 
     const [formData, setFormData] = useState({ email: '', password: '' });
     const [error, setError] = useState('');
@@ -20,7 +21,7 @@ const Login = () => {
         setError('');
 
         try {
-            const session = loginUser(formData.email, formData.password, role);
+            const session = login(formData.email, formData.password, role);
             // Redirect based on role
             if (session.role === 'student') {
                 navigate('/student/home');
