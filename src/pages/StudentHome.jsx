@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Search, MapPin, LogOut, Star, Receipt, Shirt, Home, MessageCircle, Package } from 'lucide-react';
-import { getUsers, saveOrder } from '../utils/storage';
+import { getUsers, saveOrder, createChat, sendMessage, getChats } from '../utils/storage';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { Input } from '../components/Input';
+import { ChatList } from '../components/ChatList';
+import { ChatWindow } from '../components/ChatWindow';
 import OrderHistory from './OrderHistory';
 
 const StudentHome = () => {
@@ -15,12 +17,26 @@ const StudentHome = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [sellers, setSellers] = useState([]);
     const [selectedSeller, setSelectedSeller] = useState(null);
+    const [chats, setChats] = useState([]);
+    const [activeChat, setActiveChat] = useState(null);
 
     useEffect(() => {
         const allUsers = getUsers();
         const realSellers = allUsers.filter(u => u.role === 'seller');
         setSellers(realSellers);
-    }, []);
+
+        refreshChats();
+    }, [user, activeTab]); // Refresh when tab changes or user changes
+
+    const refreshChats = () => {
+        if (!user) return;
+        const allChats = getChats();
+        // Filter chats where I am a participant
+        const myChats = allChats.filter(c => c.participants.includes(user.userId));
+        // Sort by lastUpdated desc
+        myChats.sort((a, b) => new Date(b.lastUpdated) - new Date(a.lastUpdated));
+        setChats(myChats);
+    };
 
     // Redirect if not authenticated
     useEffect(() => {
@@ -46,7 +62,7 @@ const StudentHome = () => {
             const price = selectedSeller.pricePerWash || 10;
             const totalAmount = quantity * price;
 
-            saveOrder({
+            const newOrder = saveOrder({
                 studentId: user.userId,
                 studentName: user.name,
                 sellerId: selectedSeller.id,
@@ -55,6 +71,15 @@ const StudentHome = () => {
                 amount: totalAmount,
                 quantity: quantity
             });
+
+            // --- Auto-Create Chat & Send Default Message ---
+            const newChat = createChat(newOrder.id, user.userId, selectedSeller.id, user.name, selectedSeller.name);
+            sendMessage(
+                newChat.id,
+                selectedSeller.id, // Sender is Seller (automated)
+                `Hello ${user.name}! I have received your order (#${newOrder.id.split('-')[1]}) for ${quantity} items. I will process it soon.`
+            );
+            // -----------------------------------------------
 
             setSelectedSeller(null);
             alert('Order placed successfully!');
@@ -69,20 +94,34 @@ const StudentHome = () => {
             case 'Orders':
                 return <OrderHistory embed={true} />;
             case 'Chats':
-                return (
-                    <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-light)' }}>
+                if (activeChat) {
+                    return (
                         <div style={{
-                            width: '80px', height: '80px',
-                            background: '#e0e0e0',
-                            borderRadius: '50%',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            margin: '0 auto 20px',
-                            color: 'white'
+                            position: 'fixed',
+                            top: 0, bottom: 60,
+                            left: '50%', transform: 'translateX(-50%)',
+                            width: '100%', maxWidth: '480px',
+                            zIndex: 1000,
+                            background: 'white',
+                            boxShadow: 'var(--shadow-lg)'
                         }}>
-                            <MessageCircle size={40} />
+                            <ChatWindow
+                                chat={activeChat}
+                                currentUser={user}
+                                onBack={() => { setActiveChat(null); refreshChats(); }}
+                                onSendMessage={refreshChats}
+                            />
                         </div>
-                        <h3 style={{ fontSize: '18px', fontWeight: 'bold' }}>Chat Coming Soon</h3>
-                        <p>You will be able to chat with sellers here.</p>
+                    );
+                }
+                return (
+                    <div style={{ paddingBottom: '20px' }}>
+                        <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px' }}>Messages</h2>
+                        <ChatList
+                            chats={chats}
+                            currentUserId={user.userId}
+                            onSelectChat={setActiveChat}
+                        />
                     </div>
                 );
             case 'Home':

@@ -127,3 +127,51 @@ export const seedOrders = (initialMockOrders) => {
         localStorage.setItem(ORDERS_KEY, JSON.stringify(initialMockOrders));
     }
 };
+export const CHATS_KEY = 'washify_chats';
+
+export const getChats = () => {
+    const chats = localStorage.getItem(CHATS_KEY);
+    return chats ? JSON.parse(chats) : [];
+};
+
+export const createChat = (orderId, studentId, sellerId, studentName, sellerName) => {
+    const chats = getChats();
+    // Check if chat already exists for this order
+    const existingChat = chats.find(c => c.orderId === orderId);
+    if (existingChat) return existingChat;
+
+    const newChat = {
+        id: `chat_${Date.now()}`,
+        orderId,
+        participants: [studentId, sellerId],
+        participantNames: { [studentId]: studentName, [sellerId]: sellerName },
+        messages: [], // Array of { id, senderId, text, timestamp }
+        lastUpdated: new Date().toISOString()
+    };
+    chats.push(newChat);
+    localStorage.setItem(CHATS_KEY, JSON.stringify(chats));
+    return newChat;
+};
+
+export const sendMessage = (chatId, senderId, text) => {
+    const chats = getChats();
+    const chatIndex = chats.findIndex(c => c.id === chatId);
+    if (chatIndex === -1) return null;
+
+    const newMessage = {
+        id: `msg_${Date.now()}`,
+        senderId,
+        text,
+        timestamp: new Date().toISOString()
+    };
+
+    chats[chatIndex].messages.push(newMessage);
+    chats[chatIndex].lastUpdated = newMessage.timestamp;
+    localStorage.setItem(CHATS_KEY, JSON.stringify(chats));
+    return newMessage;
+};
+
+export const getChatForOrder = (orderId) => {
+    const chats = getChats();
+    return chats.find(c => c.orderId === orderId);
+};

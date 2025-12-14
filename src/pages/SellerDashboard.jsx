@@ -5,7 +5,9 @@ import { LogOut, DollarSign, Shirt, Receipt, Home, Clock, CheckCircle, Settings,
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
-import { getOrders, updateOrderStatus, updateSellerPrice } from '../utils/storage';
+import { ChatList } from '../components/ChatList';
+import { ChatWindow } from '../components/ChatWindow';
+import { getOrders, updateOrderStatus, updateSellerPrice, getChats } from '../utils/storage';
 
 const SellerDashboard = () => {
     const navigate = useNavigate();
@@ -14,6 +16,8 @@ const SellerDashboard = () => {
     // State
     const [activeTab, setActiveTab] = useState('Pending'); // Pending, In Progress, Completed, Chats
     const [orders, setOrders] = useState([]);
+    const [chats, setChats] = useState([]);
+    const [activeChat, setActiveChat] = useState(null);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showPriceModal, setShowPriceModal] = useState(false);
     const [priceInput, setPriceInput] = useState(user?.pricePerWash || 10);
@@ -26,8 +30,24 @@ const SellerDashboard = () => {
 
     // Load Data
     useEffect(() => {
-        refreshOrders();
+        refreshData();
     }, []);
+
+    const refreshData = () => {
+        if (!user) return;
+        const allOrders = getOrders();
+        // Filter orders for this specific seller
+        const myOrders = allOrders.filter(o => o.sellerId === user.userId);
+        setOrders(myOrders);
+
+        // Load chats
+        const allChats = getChats();
+        // Filter chats where I am a participant
+        const myChats = allChats.filter(c => c.participants.includes(user.userId));
+        // Sort by lastUpdated desc
+        myChats.sort((a, b) => new Date(b.lastUpdated) - new Date(a.lastUpdated));
+        setChats(myChats);
+    };
 
     // Redirect if not authenticated
     useEffect(() => {
@@ -36,32 +56,23 @@ const SellerDashboard = () => {
         }
     }, [user, navigate]);
 
-    const refreshOrders = () => {
-        if (!user) return;
-        const allOrders = getOrders();
-        // Filter orders for this specific seller
-        const myOrders = allOrders.filter(o => o.sellerId === user.userId);
-        setOrders(myOrders);
-    };
-
     const handleStatusUpdate = (newStatus) => {
         if (selectedOrder) {
             updateOrderStatus(selectedOrder.id, newStatus);
-            refreshOrders(); // Refresh to move to new tab
+            refreshData(); // Refresh to move to new tab
             setSelectedOrder(null);
         }
     };
 
     const handleQuickStatusUpdate = (orderId, newStatus) => {
         updateOrderStatus(orderId, newStatus);
-        refreshOrders();
+        refreshData();
     };
 
     const handlePriceUpdate = (e) => {
         e.preventDefault();
         if (updateSellerPrice(user.userId, priceInput)) {
             setShowPriceModal(false);
-            // Ideally update context, but simple reload works for prototype consistency or wait for context refresh
             window.location.reload();
         }
     };
@@ -81,20 +92,39 @@ const SellerDashboard = () => {
 
     const renderContent = () => {
         if (activeTab === 'Chats') {
-            return (
-                <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-light)' }}>
+            if (activeChat) {
+                return (
                     <div style={{
-                        width: '80px', height: '80px',
-                        background: '#e0e0e0',
-                        borderRadius: '50%',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        margin: '0 auto 20px',
-                        color: 'white'
+                        position: 'fixed',
+                        top: 0,
+                        bottom: 0,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        width: '100%',
+                        maxWidth: '480px',
+                        zIndex: 1000,
+                        background: 'white',
+                        boxShadow: 'var(--shadow-lg)'
                     }}>
-                        <MessageCircle size={40} />
+                        <ChatWindow
+                            chat={activeChat}
+                            currentUser={user}
+                            onBack={() => { setActiveChat(null); refreshData(); }}
+                            onSendMessage={refreshData}
+                        />
                     </div>
-                    <h3 style={{ fontSize: '18px', fontWeight: 'bold' }}>Chat Coming Soon</h3>
-                    <p>You will be able to chat with students here.</p>
+                );
+            }
+            return (
+                <div style={{ paddingBottom: '100px' }}>
+                    <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', padding: '0 4px' }}>
+                        Messages
+                    </h2>
+                    <ChatList
+                        chats={chats}
+                        currentUserId={user.userId}
+                        onSelectChat={setActiveChat}
+                    />
                 </div>
             );
         }
