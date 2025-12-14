@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Search, MapPin, LogOut, Star, Receipt, Shirt } from 'lucide-react';
+import { Search, MapPin, LogOut, Star, Receipt, Shirt, Home, MessageCircle, Package } from 'lucide-react';
 import { getUsers, saveOrder } from '../utils/storage';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { Input } from '../components/Input';
+import OrderHistory from './OrderHistory';
 
 const StudentHome = () => {
     const navigate = useNavigate();
     const { logout, user } = useAuth();
+    const [activeTab, setActiveTab] = useState('Home');
     const [searchTerm, setSearchTerm] = useState('');
     const [sellers, setSellers] = useState([]);
     const [selectedSeller, setSelectedSeller] = useState(null);
@@ -56,13 +58,82 @@ const StudentHome = () => {
 
             setSelectedSeller(null);
             alert('Order placed successfully!');
+            setActiveTab('Orders'); // Switch to Orders tab
         } catch (error) {
             alert('Failed to place order: ' + error.message);
         }
     };
 
+    const renderContent = () => {
+        switch (activeTab) {
+            case 'Orders':
+                return <OrderHistory embed={true} />;
+            case 'Chats':
+                return (
+                    <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-light)' }}>
+                        <div style={{
+                            width: '80px', height: '80px',
+                            background: '#e0e0e0',
+                            borderRadius: '50%',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            margin: '0 auto 20px',
+                            color: 'white'
+                        }}>
+                            <MessageCircle size={40} />
+                        </div>
+                        <h3 style={{ fontSize: '18px', fontWeight: 'bold' }}>Chat Coming Soon</h3>
+                        <p>You will be able to chat with sellers here.</p>
+                    </div>
+                );
+            case 'Home':
+            default:
+                return (
+                    <>
+                        {/* Search */}
+                        <div style={{
+                            background: 'white',
+                            borderRadius: '16px',
+                            padding: '12px',
+                            boxShadow: 'var(--shadow-lg)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            marginBottom: '20px'
+                        }}>
+                            <Search color="var(--text-light)" />
+                            <input
+                                placeholder="Search areas, sellers..."
+                                style={{
+                                    border: 'none',
+                                    outline: 'none',
+                                    width: '100%',
+                                    marginLeft: '12px',
+                                    fontSize: '16px'
+                                }}
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+
+                        <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px' }}>Available Sellers</h2>
+
+                        <div style={{ paddingBottom: '40px' }}>
+                            {filteredSellers.length === 0 ? (
+                                <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-light)' }}>
+                                    {sellers.length === 0 ? 'No service providers found anywhere.' : 'No sellers match your search.'}
+                                </div>
+                            ) : (
+                                filteredSellers.map(seller => (
+                                    <SellerCard key={seller.id} seller={seller} onClick={() => setSelectedSeller(seller)} />
+                                ))
+                            )}
+                        </div>
+                    </>
+                );
+        }
+    };
+
     return (
-        <div className="container" style={{ background: '#F7F9FC' }}>
+        <div className="container" style={{ background: '#F7F9FC', minHeight: '100vh', paddingBottom: '80px' }}>
             {/* Header */}
             <div style={{
                 background: 'var(--primary-gradient)',
@@ -85,82 +156,12 @@ const StudentHome = () => {
                     </button>
                 </div>
                 <h1 style={{ fontSize: '32px', fontWeight: 'bold', lineHeight: 1.2 }}>
-                    Find Laundry<br />Services Nearby
+                    {activeTab === 'Orders' ? 'Your Orders' : activeTab === 'Chats' ? 'Your Chats' : <span>Find Laundry<br />Services Nearby</span>}
                 </h1>
             </div>
 
             <div style={{ padding: '0 20px', marginTop: '-60px' }}>
-                {/* Search */}
-                <div style={{
-                    background: 'white',
-                    borderRadius: '16px',
-                    padding: '12px',
-                    boxShadow: 'var(--shadow-lg)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    marginBottom: '20px'
-                }}>
-                    <Search color="var(--text-light)" />
-                    <input
-                        placeholder="Search areas, sellers..."
-                        style={{
-                            border: 'none',
-                            outline: 'none',
-                            width: '100%',
-                            marginLeft: '12px',
-                            fontSize: '16px'
-                        }}
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
-
-                <Button
-                    fullWidth
-                    icon={<Receipt size={20} />}
-                    onClick={() => navigate('/student/orders')}
-                    style={{
-                        marginBottom: '24px',
-                        justifyContent: 'center',
-                        height: '52px',
-                        padding: '12px',
-                        borderRadius: '999px',
-                        background: 'linear-gradient(90deg, rgb(43,140,195) 0%, rgba(121, 201, 207, 1) 100%)',
-                        color: '#f1f1f1ff',
-                        fontSize: '14px',
-                        fontWeight: 300,
-                        boxShadow: '0 8px 20px rgba(43, 140, 195, 0.35)',
-                        border: 'none',
-                        transition: 'all 0.25s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.boxShadow =
-                            '0 12px 28px rgba(43, 140, 195, 0.45)';
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow =
-                            '0 8px 20px rgba(43, 140, 195, 0.35)';
-                    }}
-                >
-                    View My Orders
-                </Button>
-
-
-                <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px' }}>Available Sellers</h2>
-
-                <div style={{ paddingBottom: '40px' }}>
-                    {filteredSellers.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-light)' }}>
-                            {sellers.length === 0 ? 'No service providers found anywhere.' : 'No sellers match your search.'}
-                        </div>
-                    ) : (
-                        filteredSellers.map(seller => (
-                            <SellerCard key={seller.id} seller={seller} onClick={() => setSelectedSeller(seller)} />
-                        ))
-                    )}
-                </div>
+                {renderContent()}
             </div>
 
             {selectedSeller && (
@@ -170,9 +171,51 @@ const StudentHome = () => {
                     onConfirm={handlePlaceOrder}
                 />
             )}
+
+            {/* Bottom Navigation */}
+            <div style={{
+                position: 'fixed',
+                bottom: 0, left: 0, right: 0,
+                background: 'white',
+                boxShadow: '0 -5px 20px rgba(0,0,0,0.05)',
+                display: 'flex',
+                justifyContent: 'space-around',
+                padding: '12px',
+                maxWidth: '480px',
+                margin: '0 auto',
+                borderRadius: '24px 24px 0 0',
+                zIndex: 100
+            }}>
+                {[
+                    { id: 'Home', icon: Home, label: 'Home' },
+                    { id: 'Orders', icon: Package, label: 'Orders' },
+                    { id: 'Chats', icon: MessageCircle, label: 'Chats' }
+                ].map(tab => (
+                    <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        style={{
+                            border: 'none',
+                            background: 'none',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '4px',
+                            color: activeTab === tab.id ? 'var(--primary-color)' : 'var(--text-light)',
+                            cursor: 'pointer',
+                            flex: 1
+                        }}
+                    >
+                        <tab.icon size={24} />
+                        <span style={{ fontSize: '10px', fontWeight: 'bold' }}>{tab.label}</span>
+                    </button>
+                ))}
+            </div>
         </div>
     );
 };
+
+
 
 const SellerCard = ({ seller, onClick }) => {
     return (

@@ -5,7 +5,7 @@ import { getOrders } from '../utils/storage';
 import { Card } from '../components/Card';
 import { ChevronLeft, Package } from 'lucide-react';
 
-const OrderHistory = () => {
+const OrderHistory = ({ embed = false }) => {
     const navigate = useNavigate();
     const { user } = useAuth();
     const [orders, setOrders] = useState([]);
@@ -43,16 +43,23 @@ const OrderHistory = () => {
     };
 
     return (
-        <div className="container" style={{ padding: '20px', minHeight: '100vh', background: '#F7F9FC' }}>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
-                <button
-                    onClick={() => navigate(-1)}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', marginRight: '8px' }}
-                >
-                    <ChevronLeft />
-                </button>
-                <h1 style={{ fontSize: '24px', fontWeight: 'bold' }}>My Orders</h1>
-            </div>
+        <div className={embed ? '' : "container"} style={{
+            padding: embed ? '0' : '20px',
+            minHeight: embed ? 'auto' : '100vh',
+            background: embed ? 'transparent' : '#F7F9FC',
+            paddingBottom: embed ? '100px' : '20px'
+        }}>
+            {!embed && (
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
+                    <button
+                        onClick={() => navigate(-1)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', marginRight: '8px' }}
+                    >
+                        <ChevronLeft />
+                    </button>
+                    <h1 style={{ fontSize: '24px', fontWeight: 'bold' }}>My Orders</h1>
+                </div>
+            )}
 
             {orders.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-light)' }}>

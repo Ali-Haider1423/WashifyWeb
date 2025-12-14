@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, DollarSign, Shirt, Receipt, Home, Clock, CheckCircle, Settings, Edit2 } from 'lucide-react';
+import { LogOut, DollarSign, Shirt, Receipt, Home, Clock, CheckCircle, Settings, Edit2, MessageCircle } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
-import { getOrders, updateOrderStatus, updateSellerPrice, getSession } from '../utils/storage';
+import { getOrders, updateOrderStatus, updateSellerPrice } from '../utils/storage';
 
 const SellerDashboard = () => {
+    const navigate = useNavigate();
     const { logout, user } = useAuth();
 
     // State
-    const [activeTab, setActiveTab] = useState('Pending'); // Pending, In Progress, Completed
+    const [activeTab, setActiveTab] = useState('Pending'); // Pending, In Progress, Completed, Chats
     const [orders, setOrders] = useState([]);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showPriceModal, setShowPriceModal] = useState(false);
@@ -27,7 +29,15 @@ const SellerDashboard = () => {
         refreshOrders();
     }, []);
 
+    // Redirect if not authenticated
+    useEffect(() => {
+        if (!user) {
+            navigate('/');
+        }
+    }, [user, navigate]);
+
     const refreshOrders = () => {
+        if (!user) return;
         const allOrders = getOrders();
         // Filter orders for this specific seller
         const myOrders = allOrders.filter(o => o.sellerId === user.userId);
@@ -64,8 +74,71 @@ const SellerDashboard = () => {
             case 'Pending': return <Home size={20} />;
             case 'In Progress': return <Clock size={20} />;
             case 'Completed': return <CheckCircle size={20} />;
+            case 'Chats': return <MessageCircle size={20} />;
             default: return <Home size={20} />;
         }
+    };
+
+    const renderContent = () => {
+        if (activeTab === 'Chats') {
+            return (
+                <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-light)' }}>
+                    <div style={{
+                        width: '80px', height: '80px',
+                        background: '#e0e0e0',
+                        borderRadius: '50%',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        margin: '0 auto 20px',
+                        color: 'white'
+                    }}>
+                        <MessageCircle size={40} />
+                    </div>
+                    <h3 style={{ fontSize: '18px', fontWeight: 'bold' }}>Chat Coming Soon</h3>
+                    <p>You will be able to chat with students here.</p>
+                </div>
+            );
+        }
+
+        return (
+            <>
+                {/* Stats (Always Visible) */}
+                <div style={{ display: 'flex', gap: '16px', marginBottom: '32px' }}>
+                    <StatCard
+                        title="Active Jobs"
+                        value={activeJobsCount}
+                        icon={<Shirt size={24} color="white" />}
+                        gradient="linear-gradient(135deg, #4FACFE 0%, #00F2FE 100%)"
+                    />
+                    <StatCard
+                        title="Earnings"
+                        value={`$${earnings}`}
+                        icon={<DollarSign size={24} color="white" />}
+                        gradient="linear-gradient(135deg, #43E97B 0%, #38F9D7 100%)"
+                    />
+                </div>
+
+                {/* Tab Content Header */}
+                <h2 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-light)' }}>
+                    {activeTab} Orders
+                </h2>
+
+                {/* Order List */}
+                {currentOrders.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-light)' }}>
+                        <p>No orders in {activeTab}</p>
+                    </div>
+                ) : (
+                    currentOrders.map(order => (
+                        <OrderCard
+                            key={order.id}
+                            order={order}
+                            onClick={() => setSelectedOrder(order)}
+                            onAction={handleQuickStatusUpdate}
+                        />
+                    ))
+                )}
+            </>
+        );
     };
 
     return (
@@ -74,7 +147,7 @@ const SellerDashboard = () => {
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                 <div>
-                    <h1 style={{ fontSize: '24px', fontWeight: 'bold' }}>Partner Dashboard</h1>
+                    <h1 style={{ fontSize: '24px', fontWeight: 'bold' }}>{activeTab === 'Chats' ? 'Chats' : 'Partner Dashboard'}</h1>
                     <p style={{ color: 'var(--text-light)' }}>Welcome, {user?.name}</p>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
@@ -103,42 +176,7 @@ const SellerDashboard = () => {
                 </div>
             </div>
 
-            {/* Stats (Always Visible) */}
-            <div style={{ display: 'flex', gap: '16px', marginBottom: '32px' }}>
-                <StatCard
-                    title="Active Jobs"
-                    value={activeJobsCount}
-                    icon={<Shirt size={24} color="white" />}
-                    gradient="linear-gradient(135deg, #4FACFE 0%, #00F2FE 100%)"
-                />
-                <StatCard
-                    title="Earnings"
-                    value={`$${earnings}`}
-                    icon={<DollarSign size={24} color="white" />}
-                    gradient="linear-gradient(135deg, #43E97B 0%, #38F9D7 100%)"
-                />
-            </div>
-
-            {/* Tab Content Header */}
-            <h2 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-light)' }}>
-                {activeTab} Orders
-            </h2>
-
-            {/* Order List */}
-            {currentOrders.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-light)' }}>
-                    <p>No orders in {activeTab}</p>
-                </div>
-            ) : (
-                currentOrders.map(order => (
-                    <OrderCard
-                        key={order.id}
-                        order={order}
-                        onClick={() => setSelectedOrder(order)}
-                        onAction={handleQuickStatusUpdate}
-                    />
-                ))
-            )}
+            {renderContent()}
 
             {/* Bottom Navigation */}
             <div style={{
@@ -154,7 +192,7 @@ const SellerDashboard = () => {
                 borderRadius: '24px 24px 0 0',
                 zIndex: 100
             }}>
-                {['Pending', 'In Progress', 'Completed'].map(tab => (
+                {['Pending', 'In Progress', 'Completed', 'Chats'].map(tab => (
                     <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
