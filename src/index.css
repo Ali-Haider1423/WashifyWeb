@@ -1,0 +1,86 @@
+/* Font Import */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Colors */
+  --primary-color: #2E86C1; /* Deep Ocean Blue */
+  --secondary-color: #00D2D3; /* Bright Cyan */
+  --dark-color: #2C3E50; /* Dark Slate */
+  --surface-color: #F7F9FC; /* Off-white/Ice */
+  --text-color: #2C3E50;
+  --text-light: #7F8C8D;
+  --white: #FFFFFF;
+  --danger: #E74C3C;
+  --success: #2ECC71;
+  --warning: #F1C40F;
+
+  /* Gradients */
+  --primary-gradient: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  --glass-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
+  
+  /* Shadows */
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+  --shadow-primary: 0 10px 15px -3px rgba(46, 134, 193, 0.3);
+
+  /* Border Radius */
+  --radius-sm: 0.5rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.5rem;
+  --radius-full: 9999px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background-color: var(--surface-color);
+  color: var(--text-color);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* Utilities */
+.container {
+  max-width: 480px; /* Mobile-first approach for web view */
+  margin: 0 auto;
+  min-height: 100vh;
+  background-color: var(--surface-color);
+  position: relative;
+  box-shadow: 0 0 50px rgba(0,0,0,0.05); /* separate "app" look on desktop */
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
