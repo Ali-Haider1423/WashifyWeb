@@ -36,6 +36,14 @@ const StudentHome = () => {
         // Sort by lastUpdated desc
         myChats.sort((a, b) => new Date(b.lastUpdated) - new Date(a.lastUpdated));
         setChats(myChats);
+
+        // If we have an active chat, update it to reflect new messages
+        if (activeChat) {
+            const updatedActiveChat = myChats.find(c => c.id === activeChat.id);
+            if (updatedActiveChat) {
+                setActiveChat(updatedActiveChat);
+            }
+        }
     };
 
     // Redirect if not authenticated
@@ -108,7 +116,7 @@ const StudentHome = () => {
                             <ChatWindow
                                 chat={activeChat}
                                 currentUser={user}
-                                onBack={() => { setActiveChat(null); refreshChats(); }}
+                                onBack={() => setActiveChat(null)}
                                 onSendMessage={refreshChats}
                             />
                         </div>

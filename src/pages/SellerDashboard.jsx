@@ -47,6 +47,14 @@ const SellerDashboard = () => {
         // Sort by lastUpdated desc
         myChats.sort((a, b) => new Date(b.lastUpdated) - new Date(a.lastUpdated));
         setChats(myChats);
+
+        // If we have an active chat, update it to reflect new messages
+        if (activeChat) {
+            const updatedActiveChat = myChats.find(c => c.id === activeChat.id);
+            if (updatedActiveChat) {
+                setActiveChat(updatedActiveChat);
+            }
+        }
     };
 
     // Redirect if not authenticated
@@ -109,7 +117,7 @@ const SellerDashboard = () => {
                         <ChatWindow
                             chat={activeChat}
                             currentUser={user}
-                            onBack={() => { setActiveChat(null); refreshData(); }}
+                            onBack={() => setActiveChat(null)}
                             onSendMessage={refreshData}
                         />
                     </div>
